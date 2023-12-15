@@ -1795,3 +1795,12 @@ const (
 	PERF_CONTEXT_GUEST_USER               = -0xa00
 	PERF_CONTEXT_MAX                      = -0xfff
 )
+
+const (
+	ICMP_FILTER = 0x1
+
+	ICMPV6_FILTER_BLOCK       = 0x1
+	ICMPV6_FILTER_BLOCKOTHERS = 0x3
+	ICMPV6_FILTER_PASS        = 0x2
+	ICMPV6_FILTER_PASSONLY    = 0x4
+)

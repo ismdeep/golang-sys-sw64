@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+//go:build aix || darwin || dragonfly || freebsd || linux || netbsd || openbsd || solaris
 // +build aix darwin dragonfly freebsd linux netbsd openbsd solaris
 
 package unix
@@ -288,6 +289,51 @@ func Recvfrom(fd int, p []byte, flags int) (n int, from Sockaddr, err error) {
 	return
 }
 
+// RecvmsgBuffers receives a message from a socket using the recvmsg system
+// call. This function is equivalent to Recvmsg, but non-control data read is
+// scattered into the buffers slices.
+func RecvmsgBuffers(fd int, buffers [][]byte, oob []byte, flags int) (n, oobn int, recvflags int, from Sockaddr, err error) {
+	iov := make([]Iovec, len(buffers))
+	for i := range buffers {
+		if len(buffers[i]) > 0 {
+			iov[i].Base = &buffers[i][0]
+			iov[i].SetLen(len(buffers[i]))
+		} else {
+			iov[i].Base = (*byte)(unsafe.Pointer(&_zero))
+		}
+	}
+	var rsa RawSockaddrAny
+	n, oobn, recvflags, err = recvmsgRaw(fd, iov, oob, flags, &rsa)
+	if err == nil && rsa.Addr.Family != AF_UNSPEC {
+		from, err = anyToSockaddr(fd, &rsa)
+	}
+	return
+}
+
+// SendmsgBuffers sends a message on a socket to an address using the sendmsg
+// system call. This function is equivalent to SendmsgN, but the non-control
+// data is gathered from buffers.
+func SendmsgBuffers(fd int, buffers [][]byte, oob []byte, to Sockaddr, flags int) (n int, err error) {
+	iov := make([]Iovec, len(buffers))
+	for i := range buffers {
+		if len(buffers[i]) > 0 {
+			iov[i].Base = &buffers[i][0]
+			iov[i].SetLen(len(buffers[i]))
+		} else {
+			iov[i].Base = (*byte)(unsafe.Pointer(&_zero))
+		}
+	}
+	var ptr unsafe.Pointer
+	var salen _Socklen
+	if to != nil {
+		ptr, salen, err = to.sockaddr()
+		if err != nil {
+			return 0, err
+		}
+	}
+	return sendmsgN(fd, iov, oob, ptr, salen, flags)
+}
+
 func Sendto(fd int, p []byte, flags int, to Sockaddr) (err error) {
 	ptr, n, err := to.sockaddr()
 	if err != nil {
@@ -376,4 +422,14 @@ func SetNonblock(fd int, nonblocking bool) (err error) {
 // process (["USER=go", "PWD=/tmp"]).
 func Exec(argv0 string, argv []string, envv []string) error {
 	return syscall.Exec(argv0, argv, envv)
+}
+
+// emptyIovecs reports whether there are no bytes in the slice of Iovec.
+func emptyIovecs(iov []Iovec) bool {
+	for i := range iov {
+		if iov[i].Len > 0 {
+			return false
+		}
+	}
+	return true
 }

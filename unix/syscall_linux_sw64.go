@@ -2,12 +2,12 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// +build linux
-// +build sw64
+//go:build linux && sw64
+// +build linux,sw64
 
 package unix
 
-//This const are meaningless in sw64
+// This const are meaningless in sw64
 const (
 	SYS_COPY_FILE_RANGE = 0
 	SYS_STATX           = 0
@@ -31,29 +31,29 @@ const (
 const (
 	//generate by handle
 	//_snyh_TODO: this should be generate by improving build script
-	FIOCLEX     = 0x20006601
-	FIONCLEX    = 0x20006602
-	FIOASYNC    = 0xffffffff8004667d
-	FIONBIO     = 0xffffffff8004667e
-	FIONREAD    = 0x4004667f
-	TIOCINQ     = 0x4004667f
-	FIOQSIZE    = 0x40086680
-	TIOCGETP    = 0x40067408
-	TIOCSETP    = 0xffffffff80067409
-	TIOCSETN    = 0xffffffff8006740a
-	TIOCSETC    = 0xffffffff80067411
-	TIOCGETC    = 0x40067412
-	TIOCSWINSZ  = 0xffffffff80087467
-	TIOCGWINSZ  = 0x40087468
-	TIOCGLTC    = 0x40067474
-	TIOCSLTC    = 0xffffffff80067475
-//	EFD_CLOEXEC = O_CLOEXEC
+	FIOCLEX    = 0x20006601
+	FIONCLEX   = 0x20006602
+	FIOASYNC   = 0xffffffff8004667d
+	FIONBIO    = 0xffffffff8004667e
+	FIONREAD   = 0x4004667f
+	TIOCINQ    = 0x4004667f
+	FIOQSIZE   = 0x40086680
+	TIOCGETP   = 0x40067408
+	TIOCSETP   = 0xffffffff80067409
+	TIOCSETN   = 0xffffffff8006740a
+	TIOCSETC   = 0xffffffff80067411
+	TIOCGETC   = 0x40067412
+	TIOCSWINSZ = 0xffffffff80087467
+	TIOCGWINSZ = 0x40087468
+	TIOCGLTC   = 0x40067474
+	TIOCSLTC   = 0xffffffff80067475
+	//	EFD_CLOEXEC = O_CLOEXEC
 
 	// _snyh_TODO: 530 cross compile hasn't include this.
 	SYS_BPF = 170
 )
 
-//replace ztypes_linux_sw64.go with this
+// replace ztypes_linux_sw64.go with this
 type Statfs_t struct {
 	Type    int64
 	Bsize   int64
@@ -69,7 +69,7 @@ type Statfs_t struct {
 	Spare   [4]int64
 }
 
-//sysnb getxpid() (pid int, ppid int)
+// sysnb getxpid() (pid int, ppid int)
 // TODO(snyh):  correct handle Getppid and Getpid
 // currently manually remove the implements of Getpid and Getppid
 // in zsyscall_linux_sw64.go
@@ -93,19 +93,19 @@ func Utime(path string, buf *Utimbuf) error {
 //sys	Fadvise(fd int, offset int64, length int64, advice int) (err error) = SYS_FADVISE64
 //sys	Ustat(dev int, ubuf *Ustat_t) (err error)
 
-//sys	Fstat64(fd int, st *Stat_t) (err error)
-//sys	Lstat64(path string, st *Stat_t) (err error)
-//sys	Stat64(path string, st *Stat_t) (err error)
-//sys	Fstatat(dirfd int, path string, stat *Stat_t, flags int) (err error) = SYS_FSTATAT64
+// sys	Fstat64(fd int, st *Stat_t) (err error)
+// sys	Lstat64(path string, st *Stat_t) (err error)
+// sys	Stat64(path string, st *Stat_t) (err error)
+// sys	Fstatat(dirfd int, path string, stat *Stat_t, flags int) (err error) = SYS_FSTATAT64
 func Fstat(fd int, st *Stat_t) (err error)      { return Fstat64(fd, st) }
 func Lstat(path string, st *Stat_t) (err error) { return Lstat64(path, st) }
 func Stat(path string, st *Stat_t) (err error)  { return Stat64(path, st) }
 
-//sys getxuid() (uid int, euid int)
+// sys getxuid() (uid int, euid int)
 func Getuid() (uid int)   { uid, _ = getxuid(); return }
 func Geteuid() (euid int) { _, euid = getxuid(); return }
 
-//sys getxgid() (gid int, egid int)
+// sys getxgid() (gid int, egid int)
 func Getgid() (gid int)   { gid, _ = getxgid(); return }
 func Getegid() (egid int) { _, egid = getxgid(); return }
 
@@ -221,6 +221,10 @@ func Iopl(level int) (err error) {
 
 // func (r *PtraceRegs) SetPC(pc uint64) { r.Regs[64] = pc }
 
+func (msghdr *Msghdr) SetIovlen(length int) {
+	msghdr.Iovlen = uint64(length)
+}
+
 func (iov *Iovec) SetLen(length int) {
 	iov.Len = uint64(length)
 }
@@ -237,7 +241,7 @@ func rawVforkSyscall(trap, a1 uintptr) (r1 uintptr, err Errno) {
 	panic("not implemented")
 }
 
-//sys	poll(fds *PollFd, nfds int, timeout int) (n int, err error)
+// sys	poll(fds *PollFd, nfds int, timeout int) (n int, err error)
 func Poll(fds []PollFd, timeout int) (n int, err error) {
 	if len(fds) == 0 {
 		return poll(nil, 0, timeout)

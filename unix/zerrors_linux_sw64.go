@@ -2638,3 +2638,13 @@ var signalList = [...]struct {
 	{30, "SIGUSR1", "user defined signal 1"},
 	{31, "SIGUSR2", "user defined signal 2"},
 }
+
+const (
+	MCAST_JOIN_GROUP         = 0x2a
+	MCAST_LEAVE_GROUP        = 0x2d
+	MCAST_LEAVE_SOURCE_GROUP = 0x2f
+	MCAST_BLOCK_SOURCE       = 0x2b
+	MCAST_UNBLOCK_SOURCE     = 0x2c
+	MCAST_JOIN_SOURCE_GROUP  = 0x2e
+	UDP_SEGMENT              = 0x67
+)

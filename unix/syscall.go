@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+//go:build aix || darwin || dragonfly || freebsd || linux || netbsd || openbsd || solaris
 // +build aix darwin dragonfly freebsd linux netbsd openbsd solaris
 
 // Package unix contains an interface to the low-level operating system
@@ -24,7 +25,10 @@
 // holds a value of type syscall.Errno.
 package unix // import "golang.org/x/sys/unix"
 
-import "strings"
+import (
+	"bytes"
+	"strings"
+)
 
 // ByteSliceFromString returns a NUL-terminated slice of bytes
 // containing the text of s. If s contains a NUL byte at any
@@ -47,6 +51,15 @@ func BytePtrFromString(s string) (*byte, error) {
 		return nil, err
 	}
 	return &a[0], nil
+}
+
+// ByteSliceToString returns a string form of the text represented by the slice s, with a terminating NUL and any
+// bytes after the NUL removed.
+func ByteSliceToString(s []byte) string {
+	if i := bytes.IndexByte(s, 0); i != -1 {
+		s = s[:i]
+	}
+	return string(s)
 }
 
 // Single-word zero for use when we need a valid pointer to 0 bytes.
